@@ -4,9 +4,9 @@ import fasttext
 import argparse
 from transformers import ElectraForSequenceClassification, BertForSequenceClassification
 
-def build_model(model_type):
+def build_model(model_type, vocab_size):
     if model_type == 'cbow':
-        return CBoWTextClassifier(vocab_size=30000, num_labels=2, embed_dim=32)   
+        return CBoWTextClassifier(vocab_size=vocab_size, num_labels=2, embed_dim=32)   
     return pretrained_model(model_type)
 
 def pretrained_model(model_type):
@@ -25,6 +25,7 @@ if __name__ =='__main__':
     parser.add_argument('--epochs',typ=int,default=3)
     args = parser.parse_args()
 
+    vocab_size = 30000
     #  1. read data 
     # input : source data / output : dataloader
     #   모델 input 형태로 변형
@@ -32,7 +33,7 @@ if __name__ =='__main__':
         # 2. vocab 생성
         # 3. dataloader 생성
     # 2. 모델 불러오고
-    model = build_model(args.model)
+    model = build_model(args.model, vocab_size=vocab_size)
     # if model_type == 'fasttext':
     #     model = fasttext.load_model('cc.ko.300.bin')
     #     model = fasttext.train_supervised(input='./train.txt')
