@@ -1,0 +1,5 @@
+gensim
+fasttext
+transformers
+ray
+tensorboardX
