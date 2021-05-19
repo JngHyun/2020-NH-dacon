@@ -1,5 +1,7 @@
 #library
+import pandas as pd
 import torchtext
+import torch
 import csv
 import pandas as pd
 
@@ -17,8 +19,15 @@ def load_for_cbow_data(path, datafields, c_col=3, l_col=-1):
         examples.append(torchtext.data.Example.fromlist([doc, label], datafields))
     return torchtext.data.Dataset(examples, datafields)
 
-
 def cbow_databuild(path, batch_size, vocab_size):
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print('the are %d GPU(s) abailable.'%torch.cuda.device_count())
+        print('We will use the GPU:',torch.cuda.get_device_name(0))
+    else:
+        device = torch.device("cpu")
+        print('No GPU available, using the CPU instead.')
+
     TEXT = torchtext.data.Field(sequential=True, tokenize=lambda x: x.split())
     LABEL = torchtext.data.LabelField(is_target=True)
     datafields = [('text', TEXT), ('label', LABEL)]
@@ -33,6 +42,7 @@ def cbow_databuild(path, batch_size, vocab_size):
     train_iterator = torchtext.data.BucketIterator(
         train,
         batch_size=batch_size,
+        device=device,
         sort_key=lambda x: len(x.text),
         repeat=False,
         train=True)
@@ -40,6 +50,7 @@ def cbow_databuild(path, batch_size, vocab_size):
     valid_iterator = torchtext.data.Iterator(
         valid,
         batch_size=batch_size,
+        device=device,
         repeat=False,
         train=False,
         sort=False)

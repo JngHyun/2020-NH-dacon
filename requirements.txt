@@ -4,3 +4,4 @@ transformers
 ray
 tensorboardX
 torch
+torchtext
