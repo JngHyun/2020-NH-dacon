@@ -1,14 +1,12 @@
 import torch
 import time
 
-
-
 def evaluate_validation(scores, loss_function, labels):
     preds = scores.argmax(dim=1)
     n_correct = (preds == labels).sum().item()
     return n_correct, loss_function(scores, labels).item()
 
-def cbow_trainer(self,model,train_iterator,valid_iterator,epoch):
+def cbow_trainer(self, model,train_iterator,valid_iterator,epoch):
     self.model = model
     self.train_iterator = train_iterator
     self.valid_iterator = valid_iterator
@@ -69,8 +67,4 @@ def cbow_trainer(self,model,train_iterator,valid_iterator,epoch):
 
         if (i+1) % 10 == 0:
             print(f'Epoch {i+1}: train loss = {train_loss:.4f}, val loss = {val_loss:.4f}, val acc: {val_acc:.4f}, time = {t1-t0:.4f}')
-        
-    output_file = f"./NH_CBoW.pt"
-    torch.save(model.state_dict(), output_file)
-
-
+            torch.save(model.state_dict(), f"./model/checkpoint/Deeping_source_CBoW_{epoch}.pt")

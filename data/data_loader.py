@@ -1,8 +1,12 @@
 #library
 import torchtext
 import csv
+import pandas as pd
 
-def load_for_cow_data(path, datafields, c_col=3, l_col=-1):
+def read_data(data_dir, command):
+    return pd.read_csv(data_dir+f"/news_{command}.csv")
+
+def load_for_cbow_data(path, datafields, c_col=3, l_col=-1):
     with open(path, encoding='utf-8') as f:
       data = csv.reader(f)
       next(data) # skip header
@@ -14,16 +18,12 @@ def load_for_cow_data(path, datafields, c_col=3, l_col=-1):
     return torchtext.data.Dataset(examples, datafields)
 
 
-def cbow_databuild(self,path,batch_size,vocab_size):
-    self.path = path
-    self.batch_size = batch_size
-    self.vocab_size = vocab_size
-
+def cbow_databuild(path, batch_size, vocab_size):
     TEXT = torchtext.data.Field(sequential=True, tokenize=lambda x: x.split())
     LABEL = torchtext.data.LabelField(is_target=True)
     datafields = [('text', TEXT), ('label', LABEL)]
 
-    data = load_for_cow_data(path, datafields)
+    data = load_for_cbow_data(path, datafields)
     train, valid = data.split([0.9, 0.1])
 
     # Build vocabularies from the dataset.
@@ -32,24 +32,16 @@ def cbow_databuild(self,path,batch_size,vocab_size):
 
     train_iterator = torchtext.data.BucketIterator(
         train,
-        #device=device,
-        batch_size=args.batch_size,
+        batch_size=batch_size,
         sort_key=lambda x: len(x.text),
         repeat=False,
         train=True)
 
     valid_iterator = torchtext.data.Iterator(
         valid,
-        #device=device,
-        batch_size=128,
+        batch_size=batch_size,
         repeat=False,
         train=False,
         sort=False)
 
     return train_iterator, valid_iterator
-
-
-
-#bert
-1.토크나이저
-DataLoader
