@@ -26,7 +26,18 @@ if __name__ =='__main__':
 
     
     if args.model == 'cbow':
-        text, label = load_data()
-        model = CBoWTextClassifier(vocab_size=len(text.vocab), label_num=len(label.vocab), embed_dim=32)   
+        model = CBoWTextClassifier(vocab_size=len(text.vocab), num_labels=2, embed_dim=32)   
     else:
         model = pretrained_model(args.model)
+
+
+1. data 읽어오고
+    모델 input 형태로 변형
+2. 모델 불러오고
+3. trainer에서 학습하고 (model, dataloader) 넣어주기
+4. test, inference (model, dataloader) 
+
+모델 input 형태로 변형
+1. tokenize
+2. vocab 생성
+3. dataloader 생성

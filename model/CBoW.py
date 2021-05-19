@@ -6,13 +6,13 @@ class CBoWTextClassifier(nn.Module):
   Simple text classifier by using Continous Bag of Word (CBoW)
   Reference : http://www.cse.chalmers.se/~richajo/nlp2019/l2/Text%20classification%20using%20a%20CBoW%20representation.html
   '''
-  def __init__(self, vocab_size, label_num, embed_dim, hidden_size=20, dropout_ratio=0.1):
+  def __init__(self, vocab_size, num_labels, embed_dim, hidden_size=20, dropout_ratio=0.1):
     super().__init__()
     self.vocab_size = vocab_size
-    self.label_num = label_num
+    self.num_labels = num_labels
     self.embedding = nn.Embedding(vocab_size, embed_dim)
     self.hidden_layer = nn.Linear(embed_dim, hidden_size)
-    self.output = nn.Linear(hidden_size, label_num)
+    self.output = nn.Linear(hidden_size, num_labels)
     self.dropout_ratio = nn.Dropout(dropout_ratio)
 
   def forward(self, docs):
