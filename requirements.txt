@@ -3,3 +3,4 @@ fasttext
 transformers
 ray
 tensorboardX
+torch
