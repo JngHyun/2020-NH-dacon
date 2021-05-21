@@ -1,58 +1,79 @@
-#library
-import pandas as pd
-import torchtext
-import torch
+# library
 import csv
+import random
+
 import pandas as pd
+import torch
+from torchtext.data import BucketIterator, Dataset, Example, Field, LabelField
 
-def read_data(data_dir, command):
-    return pd.read_csv(data_dir+f"/news_{command}.csv")
 
-def load_for_cbow_data(path, datafields, c_col=3, l_col=-1):
-    with open(path, encoding='utf-8') as f:
-      data = csv.reader(f)
-      next(data) # skip header
-      examples = []
-      for line in data:
-        doc = line[c_col]
-        label = line[l_col]
-        examples.append(torchtext.data.Example.fromlist([doc, label], datafields))
-    return torchtext.data.Dataset(examples, datafields)
+def read_data(data_dir, command, model_type):
+    input_file = data_dir + f"/news_{command}.csv"
+    if model_type == "cbow":
+        return load_torchtext(input_file, command)
+    return pd.read_csv(input_file)
 
-def cbow_databuild(path, batch_size, vocab_size):
-    if torch.cuda.is_available():
-        device = torch.device("cuda")
-        print('the are %d GPU(s) abailable.'%torch.cuda.device_count())
-        print('We will use the GPU:',torch.cuda.get_device_name(0))
-    else:
-        device = torch.device("cpu")
-        print('No GPU available, using the CPU instead.')
 
-    TEXT = torchtext.data.Field(sequential=True, tokenize=lambda x: x.split())
-    LABEL = torchtext.data.LabelField(is_target=True)
-    datafields = [('text', TEXT), ('label', LABEL)]
+def load_torchtext(input_file, command):
+    TEXT = Field(sequential=True, tokenize=lambda x: x.split())
+    LABEL = LabelField(is_target=True)
+    datafields = [("text", TEXT), ("label", LABEL)]
 
-    data = load_for_cbow_data(path, datafields)
-    train, valid = data.split([0.9, 0.1])
+    with open(input_file, encoding="utf-8") as f:
+        raw_data = csv.DictReader(f)
+        examples = []
+        for row in raw_data:
+            content = row.get("content")
+            label = row.get("info", -1)
+            if label != -1:
+                examples.append(Example.fromlist([content, label], datafields))
+            else:
+                examples.append(Example.fromlist([content], datafields))
 
-    # Build vocabularies from the dataset.
-    TEXT.build_vocab(train, max_size=vocab_size)
-    LABEL.build_vocab(train)
+    data = Dataset(examples, datafields)
 
-    train_iterator = torchtext.data.BucketIterator(
-        train,
+    if command == "train":
+        train_data, valid_data = data.split(
+            split_ratio=0.9, random_state=random.seed(42)
+        )
+        TEXT.build_vocab(train_data)
+        LABEL.build_vocab(train_data)
+        vocab_size = len(TEXT.vocab)
+
+        return (train_data, valid_data, vocab_size)
+
+    return data
+
+
+def build_loader(data_dir, command, model_type, batch_size):
+    data = read_data(data_dir, command, model_type)
+
+    # device setting : cpu or gpu
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if command == "train":
+        if model_type == "cbow":
+            train_data = data[0]
+            valid_data = data[1]
+            vocab_size = data[2]
+
+            train_dataloader, valid_dataloader = BucketIterator.splits(
+                (train_data, valid_data),
+                batch_size=batch_size,
+                sort_within_batch=True,
+                sort_key=lambda x: len(x.text),
+                device=device,
+            )
+
+            return train_dataloader, valid_dataloader, vocab_size
+        else:
+            raise NotImplementedError
+
+    test_dataloader = BucketIterator(
+        data,
         batch_size=batch_size,
-        device=device,
+        sort_within_batch=True,
         sort_key=lambda x: len(x.text),
-        repeat=False,
-        train=True)
-
-    valid_iterator = torchtext.data.Iterator(
-        valid,
-        batch_size=batch_size,
         device=device,
-        repeat=False,
-        train=False,
-        sort=False)
-
-    return train_iterator, valid_iterator
+    )
+    return test_dataloader
