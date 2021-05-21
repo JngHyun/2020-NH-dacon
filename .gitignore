@@ -1,0 +1,4 @@
+data/__pycache__
+model/__pycache__
+trainer/__pycache__
+.DS_Store
