@@ -1,6 +1,7 @@
 import datetime
 import random
 import time
+from tqdm import tqdm
 
 import numpy as np
 import torch
@@ -57,47 +58,43 @@ def run(train_dataloader, val_dataloader, test_dataloader, model, epochs, learni
         print(f'\t Test Loss: {test_loss:.3f} |  Test Acc: {test_acc*100:.2f}%')
     
 
-def train(model, train_dataloader, optimizer, criterion):
-    train_batches = list(train_iterator)
-    valid_batches = list(valid_iterator)
+def train(model, dataloader, optimizer, criterion):
+    total_epoch_loss = 0
+    total_epoch_acc = 0
+    
+    model.train()
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
+    # ========================================
+    #               Training
+    # ========================================
+    for batch in tqdm(dataloader, desc="train"):
+        optimizer.zero_grad() 
+        text, labels = batch.text, batch.label
+        # Compute the output scores.
+        preds = model(text)
+        acc = flat_accuracy(preds, labels)
+        # Then the loss function.
+        loss = criterion(preds, batch.label)
+        # Compute the gradient with respect to the loss, and update the parameters of the model.
+        loss.backward()
+        optimizer.step()
 
-    for epoch in range(epochs):
-        t0 = time.time()
+        total_epoch_loss += loss.item()
+        total_epoch_acc += acc.item()
 
-        loss_sum = 0
-        n_batches = 0
+    epoch_loss = total_epoch_loss / len(dataloader)
+    epoch_acc = total_epoch_acc / len(dataloader)
 
-        model.train()
+    return epoch_loss, epoch_acc
+    
 
-        # ========================================
-        #               Training
-        # ========================================
-        for batch in train_batches:
-            # Compute the output scores.
-            scores = model(batch.text)
-            # Then the loss function.
-            loss = criterion(scores, batch.label)
-
-            # Compute the gradient with respect to the loss, and update the parameters of the model.
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-
-            loss_sum += loss.item()
-            n_batches += 1
-
-        train_loss = loss_sum / n_batches
-        # history['train_loss'].append(train_loss)
-
-        # After each training epoch, we'll compute the loss and accuracy on the validation set.
-        n_correct = 0
-        # n_valid = len(valid)
-        n_valid = len(valid_iterator)
-        loss_sum = 0
-        n_batches = 0
+def evaluate(model, val_dataloader, criterion):
+    # After each training epoch, we'll compute the loss and accuracy on the validation set.
+    n_correct = 0
+    # n_valid = len(valid)
+    n_valid = len(valid_iterator)
+    loss_sum = 0
+    n_batches = 0
 
         # Calling model.train() will disable the dropout layers.
         model.eval()
@@ -127,8 +124,6 @@ def train(model, train_dataloader, optimizer, criterion):
 
     print("")
     print("Training complete!")
-
-def evaluate(model, val_dataloader, criterion):
 
 # def pretrained_model_trainer(model, train_dataloader, validation_dataloader, epochs):
 
