@@ -53,6 +53,11 @@ def run(train_dataloader, val_dataloader, test_dataloader, model, epochs, learni
             print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
             print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
 
+            if (epoch + 1) % 10 == 0:
+                torch.save(model.state_dict(), f"./model/checkpoint/Deeping_source_CBoW_{epoch}.pt")
+
+        print("Training complete!")
+
     if test_dataloader is not None:
         test_loss, test_acc = evaluate(model, test_dataloader, criterion)
         print(f'\t Test Loss: {test_loss:.3f} |  Test Acc: {test_acc*100:.2f}%')
@@ -97,59 +102,33 @@ def evaluate(model, dataloader, criterion):
     # ========================================
     #               Validation
     # ========================================
-    for batch in tqdm(dataloader, desc="evaluate"):
-        text, labels = batch.text, batch.label
-        # Compute the output scores.
-        preds = model(text)
-        acc = flat_accuracy(preds, labels)
-        # Then the loss function.
-        loss = criterion(preds, batch.label)
-        # Compute the gradient with respect to the loss, and update the parameters of the model.
-        loss.backward()
-        optimizer.step()
+    with torch.no_grad():
+        for batch in tqdm(dataloader, desc="evaluate"):
+            text, labels = batch.text, batch.label
+            # Compute the output scores.
+            preds = model(text)
+            acc = flat_accuracy(preds, labels)
+            # Then the loss function.
+            loss = criterion(preds, batch.label)
+            # Compute the gradient with respect to the loss, and update the parameters of the model.
 
-        total_epoch_loss += loss.item()
-        total_epoch_acc += acc.item()
+            total_epoch_loss += loss.item()
+            total_epoch_acc += acc.item()
 
     epoch_loss = total_epoch_loss / len(dataloader)
     epoch_acc = total_epoch_acc / len(dataloader)
 
     return epoch_loss, epoch_acc
-    # After each training epoch, we'll compute the loss and accuracy on the validation set.
-    n_correct = 0
-    # n_valid = len(valid)
-    n_valid = len(valid_iterator)
-    loss_sum = 0
-    n_batches = 0
 
-        # Calling model.train() will disable the dropout layers.
-        model.eval()
+    # result_dict = {"id":[],"info":[]}
+# result_dict["id"].extend(test['id'].values.astype(str))
+#   # logit 기반으로 예측 라벨 구함
+#   predicted_label = np.argmax(logits, axis=1).flatten()
+#   result_dict["info"].extend(predicted_label)
 
-        # ========================================
-        #               Validation
-        # ========================================
-        for batch in valid_batches:
-            scores = model(batch.text)
-            n_corr_batch, loss_batch = evaluate_validation(
-                scores, criterion, batch.label
-            )
-            loss_sum += loss_batch
-            n_correct += n_corr_batch
-            n_batches += 1
-        val_acc = n_correct / n_valid
-        val_loss = loss_sum / n_batches
-        t1 = time.time()
-
-        if (epoch + 1) % 10 == 0:
-            print(
-                f"Epoch {i+1}: train loss = {train_loss:.4f}, val loss = {val_loss:.4f}, val acc: {val_acc:.4f}, time = {t1-t0:.4f}"
-            )
-            torch.save(
-                model.state_dict(), f"./model/checkpoint/Deeping_source_CBoW_{epoch}.pt"
-            )
-
-    print("")
-    print("Training complete!")
+# # 결과값을 담은 딕셔너리로부터 dataframe을 생성하고, 제출용 csv파일로 출력하여 저장
+# sub = pd.DataFrame(result_dict)
+# sub.to_csv('./data/submission_256.csv', index=False, header=True)
 
 # def pretrained_model_trainer(model, train_dataloader, validation_dataloader, epochs):
 
