@@ -1,6 +1,6 @@
 # from typing_extensions import Required
 from model.CBoW import CBoWTextClassifier
-from trainer.trainer import train
+from trainer.trainer import run
 import torch
 import argparse
 from data.data_loader import build_loader
@@ -50,6 +50,8 @@ if __name__ =='__main__':
 
     param_dict = set_hyperparameter_dict()
 
+    train_dataloader, val_dataloader, test_dataloader = None, None, None
+
     #  1. read data 
     # input : source data / output : dataloader
     if args.do_train:
@@ -75,9 +77,8 @@ if __name__ =='__main__':
 
     #     model = fasttext.train_supervised(input='./train.txt')
     # 3. trainer에서 학습하고 (model, dataloader) 넣어주기
-    # train(train_dataloader, val_dataloader, model)
+    run(train_dataloader, val_dataloader, test_dataloader, model, param_dict['num_epochs'], param_dict['learning_rate'])
     # 4. test, inference (model, dataloader) 
-    # test(train_dataloader, val_dataloader, model)
 
 
 

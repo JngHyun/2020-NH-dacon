@@ -18,17 +18,48 @@ def format_time(elapsed):
     elapsed_rounded = int(round((elapsed)))
     return str(datetime.timedelta(seconds=elapsed_rounded))
 
+def epoch_time(start_time, end_time):
+    elapsed_time = end_time - start_time
+    elapsed_mins = int(elapsed_time / 60)
+    elapsed_secs = int(elapsed_time - (elapsed_mins * 60))
+    return elapsed_mins, elapsed_secs
+
 
 def flat_accuracy(preds, labels):
     pred_flat = np.argmax(preds, axis=1).flatten()
     labels_flat = labels.flatten()
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
-    valid_batches = list(valid_iterator)
+def run(train_dataloader, val_dataloader, test_dataloader, model, epochs, learning_rate):
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    criterion = nn.CrossEntropyLoss()
 
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    criterion = criterion.to(device)
 
-def train(model, train_iterator, valid_iterator, epochs):
+    if train_dataloader and val_dataloader:
+        for epoch in range(epochs):
+            print(f'Epoch: {epoch+1:02}')
+            start_time = time.time()
+
+            train_loss, train_acc = train(model, train_dataloader, optimizer, criterion)
+            valid_loss, valid_acc = evaluate(model, val_dataloader, criterion)
+
+            end_time = time.time()
+            epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+            print(f'\nEpoch Time: {epoch_mins}m {epoch_secs}s')
+            print(f'\tTrain Loss: {train_loss:.3f} | Train Acc: {train_acc*100:.2f}%')
+            print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
+
+    if test_dataloader is not None:
+        test_loss, test_acc = evaluate(model, test_dataloader, criterion)
+        print(f'\t Test Loss: {test_loss:.3f} |  Test Acc: {test_acc*100:.2f}%')
+    
+
+def train(model, train_dataloader, optimizer, criterion):
     train_batches = list(train_iterator)
+    valid_batches = list(valid_iterator)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.0005)
@@ -97,6 +128,7 @@ def train(model, train_iterator, valid_iterator, epochs):
     print("")
     print("Training complete!")
 
+def evaluate(model, val_dataloader, criterion):
 
 # def pretrained_model_trainer(model, train_dataloader, validation_dataloader, epochs):
 
