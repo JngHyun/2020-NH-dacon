@@ -74,7 +74,7 @@ def train(model, dataloader, optimizer, criterion):
         preds = model(text)
         acc = flat_accuracy(preds, labels)
         # Then the loss function.
-        loss = criterion(preds, batch.label)
+        loss = criterion(preds, labels)
         # Compute the gradient with respect to the loss, and update the parameters of the model.
         loss.backward()
         optimizer.step()
@@ -88,7 +88,33 @@ def train(model, dataloader, optimizer, criterion):
     return epoch_loss, epoch_acc
     
 
-def evaluate(model, val_dataloader, criterion):
+def evaluate(model, dataloader, criterion):
+    total_epoch_loss = 0
+    total_epoch_acc = 0
+    
+    model.eval()
+
+    # ========================================
+    #               Validation
+    # ========================================
+    for batch in tqdm(dataloader, desc="evaluate"):
+        text, labels = batch.text, batch.label
+        # Compute the output scores.
+        preds = model(text)
+        acc = flat_accuracy(preds, labels)
+        # Then the loss function.
+        loss = criterion(preds, batch.label)
+        # Compute the gradient with respect to the loss, and update the parameters of the model.
+        loss.backward()
+        optimizer.step()
+
+        total_epoch_loss += loss.item()
+        total_epoch_acc += acc.item()
+
+    epoch_loss = total_epoch_loss / len(dataloader)
+    epoch_acc = total_epoch_acc / len(dataloader)
+
+    return epoch_loss, epoch_acc
     # After each training epoch, we'll compute the loss and accuracy on the validation set.
     n_correct = 0
     # n_valid = len(valid)
