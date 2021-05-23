@@ -13,21 +13,24 @@ def read_data(data_dir, command, model_type):
         return load_torchtext(input_file, command)
     return pd.read_csv(input_file)
 
+
 def get_datafields(command):
     TEXT = Field(sequential=True, tokenize=lambda x: x.split())
     if command == "train":
         LABEL = LabelField(is_target=True)
         datafields = [("text", TEXT), ("label", LABEL)]
-    else: 
+    else:
         ID = Field(sequential=False, use_vocab=False)
         datafields = [("text", TEXT), ("id", ID)]
     return datafields
+
 
 def get_vocab_size(train_data):
     TEXT = Field(sequential=True, tokenize=lambda x: x.split())
     TEXT.build_vocab(train_data)
     vocab_size = len(TEXT.vocab)
     return vocab_size
+
 
 def load_torchtext(input_file, command):
     datafields = get_datafields(command)
@@ -52,7 +55,9 @@ def load_torchtext(input_file, command):
 
     return data
 
+
 # torch text 아닌 경우에 대한 케이스 작성 필요
+
 
 def build_loader(data_dir, command, model_type, batch_size):
     data = read_data(data_dir, command, model_type)
