@@ -77,7 +77,7 @@ if __name__ =='__main__':
 
     #     model = fasttext.train_supervised(input='./train.txt')
     # 3. trainer에서 학습하고 (model, dataloader) 넣어주기
-    run(train_dataloader, val_dataloader, test_dataloader, model, param_dict['num_epochs'], param_dict['learning_rate'])
+    run(train_dataloader, val_dataloader, test_dataloader, model, args.checkpoint, args.output_dir, param_dict['num_epochs'], param_dict['learning_rate'])
     # 4. test, inference (model, dataloader) 
 
 
