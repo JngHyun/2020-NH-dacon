@@ -2,7 +2,8 @@ import datetime
 import random
 import time
 from tqdm import tqdm
-
+import pandas as pd
+import os
 import numpy as np
 import torch
 import torch.nn as nn
@@ -31,7 +32,7 @@ def flat_accuracy(preds, labels):
     labels_flat = labels.flatten()
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
-def run(train_dataloader, val_dataloader, test_dataloader, model, epochs, learning_rate):
+def run(train_dataloader, val_dataloader, test_dataloader, model, checkpoint, output_dir, epochs, learning_rate):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
@@ -54,15 +55,17 @@ def run(train_dataloader, val_dataloader, test_dataloader, model, epochs, learni
             print(f'\t Val. Loss: {valid_loss:.3f} |  Val. Acc: {valid_acc*100:.2f}%')
 
             if (epoch + 1) % 10 == 0:
-                torch.save(model.state_dict(), f"./model/checkpoint/Deeping_source_CBoW_{epoch}.pt")
+                torch.save(model.state_dict(), os.path.join(output_dir, f"checkpoint/Deeping_source_CBoW_{epoch}.pt"))
 
         print("Training complete!")
 
     if test_dataloader is not None:
-        test_loss, test_acc = evaluate(model, test_dataloader, criterion)
-        print(f'\t Test Loss: {test_loss:.3f} |  Test Acc: {test_acc*100:.2f}%')
+        result_dict = inference(model, test_dataloader)
+        
+        # 결과값을 담은 딕셔너리로부터 dataframe을 생성하고, 제출용 csv파일로 출력하여 저장
+        output = pd.DataFrame(result_dict)
+        output.to_csv(os.path.join(output_dir, 'submission.csv', index=False, header=True))
     
-
 def train(model, dataloader, optimizer, criterion):
     total_epoch_loss = 0
     total_epoch_acc = 0
@@ -120,15 +123,30 @@ def evaluate(model, dataloader, criterion):
 
     return epoch_loss, epoch_acc
 
-    # result_dict = {"id":[],"info":[]}
-# result_dict["id"].extend(test['id'].values.astype(str))
-#   # logit 기반으로 예측 라벨 구함
-#   predicted_label = np.argmax(logits, axis=1).flatten()
-#   result_dict["info"].extend(predicted_label)
+def inference(model, dataloader):
+    result_dict = {"id":[],"info":[]}
 
-# # 결과값을 담은 딕셔너리로부터 dataframe을 생성하고, 제출용 csv파일로 출력하여 저장
-# sub = pd.DataFrame(result_dict)
-# sub.to_csv('./data/submission_256.csv', index=False, header=True)
+    model.eval()
+
+    # ========================================
+    #               Validation
+    # ========================================
+    with torch.no_grad():
+        for batch in tqdm(dataloader, desc="evaluate"):
+            text, ids = batch.text, batch.ids
+            # Compute the output scores.
+            preds = model(text)
+
+    # logit 구함
+    logit = preds[0]
+    logits = logit.detach().cpu().numpy()
+
+    # logit 기반으로 예측 라벨 구함
+    preds = np.argmax(logits, axis=1).flatten()
+    result_dict["info"].extend(preds)
+    result_dict["id"].extend(ids)
+
+    return result_dict
 
 # def pretrained_model_trainer(model, train_dataloader, validation_dataloader, epochs):
 
