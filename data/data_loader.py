@@ -13,22 +13,32 @@ def read_data(data_dir, command, model_type):
         return load_torchtext(input_file, command)
     return pd.read_csv(input_file)
 
+def get_datafields(command):
+    TEXT = Field(sequential=True, tokenize=lambda x: x.split())
+    if command == "train":
+        LABEL = LabelField(is_target=True)
+        datafields = [("text", TEXT), ("label", LABEL)]
+    else: 
+        ID = Field(sequential=False, use_vocab=False)
+        datafields = [("text", TEXT), ("id", ID)]
+    return datafields
+
+def get_vocab_size(train_data):
+    TEXT = Field(sequential=True, tokenize=lambda x: x.split())
+    TEXT.build_vocab(train_data)
+    vocab_size = len(TEXT.vocab)
+    return vocab_size
 
 def load_torchtext(input_file, command):
-    TEXT = Field(sequential=True, tokenize=lambda x: x.split())
-    LABEL = LabelField(is_target=True)
-    datafields = [("text", TEXT), ("label", LABEL)]
+    datafields = get_datafields(command)
 
     with open(input_file, encoding="utf-8") as f:
         raw_data = csv.DictReader(f)
         examples = []
         for row in raw_data:
-            content = row.get("content")
-            label = row.get("info", -1)
-            if label != -1:
-                examples.append(Example.fromlist([content, label], datafields))
-            else:
-                examples.append(Example.fromlist([content], datafields))
+            field1 = row.get("content")
+            field2 = row.get("info") if command == "train" else row.get("id")
+            examples.append(Example.fromlist([field1, field2], datafields))
 
     data = Dataset(examples, datafields)
 
@@ -36,14 +46,13 @@ def load_torchtext(input_file, command):
         train_data, valid_data = data.split(
             split_ratio=0.9, random_state=random.seed(42)
         )
-        TEXT.build_vocab(train_data)
-        LABEL.build_vocab(train_data)
-        vocab_size = len(TEXT.vocab)
+        vocab_size = get_vocab_size(train_data)
 
         return (train_data, valid_data, vocab_size)
 
     return data
 
+# torch text 아닌 경우에 대한 케이스 작성 필요
 
 def build_loader(data_dir, command, model_type, batch_size):
     data = read_data(data_dir, command, model_type)
