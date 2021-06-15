@@ -71,7 +71,7 @@ def train(model, dataloader, optimizer, criterion):
     total_epoch_acc = 0
     
     model.train()
-
+    
     # ========================================
     #               Training
     # ========================================
