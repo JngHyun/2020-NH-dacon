@@ -1,9 +1,8 @@
 # from typing_extensions import Required
 from model.CBoW import CBoWTextClassifier
 from trainer.trainer import run
-import torch
 import argparse
-from data.data_loader import build_loader
+from utils.dataprocessor import build_loader
 from transformers import ElectraForSequenceClassification, BertForSequenceClassification
 
 def build_model(model_type, vocab_size):
@@ -29,29 +28,9 @@ def set_hyperparameter_dict():
     }
     return param_dict
 
-if __name__ =='__main__':
-    parser = argparse.ArgumentParser()
-    # Directory paths
-    parser.add_argument('--data-dir', required=True, default='./data')
-    parser.add_argument('--output-dir', required=True, default='./output')
-    # Model 
-    parser.add_argument('--model-type', required=True, choices=['cbow','fasttext','mbert','electra'])
-    parser.add_argument('--checkpoint', type=str)
-    # Train/test commands
-    parser.add_argument('--do-train', action="store_true")
-    parser.add_argument('--do-test', action="store_true")
-    # Hyperparameters
-    parser.add_argument('--search-hparam', action="store_true")
-    args = parser.parse_args()
-
-    if args.do_train & args.do_test == False:
-        print('Nothing to do !')
-        raise NotImplementedError
-
+def main(args):
     param_dict = set_hyperparameter_dict()
-
     train_dataloader, val_dataloader, test_dataloader = None, None, None
-
     #  1. read data 
     # input : source data / output : dataloader
     if args.do_train:
@@ -80,6 +59,23 @@ if __name__ =='__main__':
     run(train_dataloader, val_dataloader, test_dataloader, model, args.checkpoint, args.output_dir, param_dict['num_epochs'], param_dict['learning_rate'])
     # 4. test, inference (model, dataloader) 
 
+if __name__ =='__main__':
+    parser = argparse.ArgumentParser()
+    # Directory paths
+    parser.add_argument('--data-dir', required=True, default='./data')
+    parser.add_argument('--output-dir', required=True, default='./output')
+    # Model 
+    parser.add_argument('--model-type', required=True, choices=['cbow','fasttext','mbert','electra'])
+    parser.add_argument('--checkpoint', type=str)
+    # Train/test commands
+    parser.add_argument('--do-train', action="store_true")
+    parser.add_argument('--do-test', action="store_true")
+    # Hyperparameters
+    parser.add_argument('--search-hparam', action="store_true")
+    args = parser.parse_args()
 
+    if args.do_train & args.do_test == False:
+        print('Nothing to do !')
+        raise NotImplementedError
 
-
+    main(args)
