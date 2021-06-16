@@ -1,7 +1,5 @@
-# library
 import csv
 import random
-
 import pandas as pd
 import torch
 from torchtext.data import BucketIterator, Dataset, Example, Field, LabelField
@@ -57,8 +55,6 @@ def load_torchtext(input_file, command):
 
 
 # torch text 아닌 경우에 대한 케이스 작성 필요
-
-
 def build_loader(data_dir, command, model_type, batch_size):
     data = read_data(data_dir, command, model_type)
 
