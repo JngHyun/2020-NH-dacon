@@ -79,15 +79,16 @@ def train(model, dataloader, optimizer, criterion):
         optimizer.zero_grad() 
         text, labels = batch.text, batch.label
         # Compute the output scores.
-        preds = model(text).detach()
+        preds = model(text)
 
         # Then the loss function.
         loss = criterion(preds, labels)
         # Compute the gradient with respect to the loss, and update the parameters of the model.
+        optimizer.zero_grad()    
         loss.backward()
         optimizer.step()
 
-        acc = flat_accuracy(preds.numpy(), labels)
+        acc = flat_accuracy(preds.detach().numpy(), labels)
 
         total_epoch_loss += loss.item()
         total_epoch_acc += acc.item()
@@ -111,12 +112,12 @@ def evaluate(model, dataloader, criterion):
         for batch in tqdm(dataloader, desc="evaluate"):
             text, labels = batch.text, batch.label
             # Compute the output scores.
-            preds = model(text).detach()
+            preds = model(text)
             
             # Then the loss function.
             loss = criterion(preds, batch.label)
             # Compute the gradient with respect to the loss, and update the parameters of the model.
-            acc = flat_accuracy(preds.numpy(), labels)
+            acc = flat_accuracy(preds.detach().numpy(), labels)
 
             total_epoch_loss += loss.item()
             total_epoch_acc += acc.item()
