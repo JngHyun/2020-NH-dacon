@@ -23,13 +23,6 @@ def get_datafields(command):
     return datafields
 
 
-def get_vocab_size(train_data):
-    TEXT = Field(sequential=True, tokenize=lambda x: x.split())
-    TEXT.build_vocab(train_data)
-    vocab_size = len(TEXT.vocab)
-    return vocab_size
-
-
 def load_torchtext(input_file, command):
     datafields = get_datafields(command)
 
@@ -42,13 +35,16 @@ def load_torchtext(input_file, command):
             examples.append(Example.fromlist([field1, field2], datafields))
 
     data = Dataset(examples, datafields)
-
+    
     if command == "train":
         train_data, valid_data = data.split(
             split_ratio=0.9, random_state=random.seed(42)
         )
-        vocab_size = get_vocab_size(train_data)
 
+        train_data.fields['text'].build_vocab(train_data) # max_size
+        train_data.fields['label'].build_vocab(train_data)
+        vocab_size = len(train_data.fields['text'].vocab)
+        
         return (train_data, valid_data, vocab_size)
 
     return data
