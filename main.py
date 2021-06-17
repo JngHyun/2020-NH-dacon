@@ -36,7 +36,7 @@ def main(args):
     if args.do_train:
         train_dataloader, val_dataloader, vocab_size = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
     if args.do_test:
-        test_dataloader = build_loader(args.data_dir, "test", args.model_type, param_dict['test_batch_size'])
+        test_dataloader, vocab_size = build_loader(args.data_dir, "test", args.model_type, param_dict['test_batch_size'])
 
     #   모델 input 형태로 변형
         # 1. tokenize
