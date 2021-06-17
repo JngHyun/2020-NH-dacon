@@ -40,7 +40,6 @@ def load_torchtext(input_file, command):
         train_data, valid_data = data.split(
             split_ratio=0.9, random_state=random.seed(42)
         )
-
         train_data.fields['text'].build_vocab(train_data) # max_size
         train_data.fields['label'].build_vocab(train_data)
         vocab_size = len(train_data.fields['text'].vocab)
@@ -59,9 +58,7 @@ def build_loader(data_dir, command, model_type, batch_size):
 
     if command == "train":
         if model_type == "cbow":
-            train_data = data[0]
-            valid_data = data[1]
-            vocab_size = data[2]
+            train_data, valid_data, vocab_size = data
 
             train_dataloader, valid_dataloader = BucketIterator.splits(
                 (train_data, valid_data),
