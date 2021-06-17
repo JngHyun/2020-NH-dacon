@@ -7,7 +7,7 @@ from transformers import ElectraForSequenceClassification, BertForSequenceClassi
 
 def build_model(model_type, vocab_size):
     if model_type == 'cbow':
-        return CBoWTextClassifier(vocab_size=vocab_size, num_labels=2, embed_dim=32)   
+        return CBoWTextClassifier(vocab_size=vocab_size, num_label=2, embed_dim=32)   
     return pretrained_model(model_type)
 
 def pretrained_model(model_type):
