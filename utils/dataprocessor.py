@@ -45,9 +45,11 @@ def load_torchtext(input_file, command):
         vocab_size = len(train_data.fields['text'].vocab)
         
         return (train_data, valid_data, vocab_size)
-
-    return data
-
+    else:
+        data.fields['text'].build_vocab(data) # max_size
+        data.fields['id'].build_vocab(data)
+        vocab_size = len(data.fields['text'].vocab)
+        return data, vocab_size
 
 # torch text 아닌 경우에 대한 케이스 작성 필요
 def build_loader(data_dir, command, model_type, batch_size):
