@@ -33,7 +33,7 @@ def main(args):
     train_dataloader, val_dataloader, test_dataloader = None, None, None
     #  1. read data 
     # input : source data / output : dataloader
-    if args.model == 'cbow':
+    if args.model_type == 'cbow':
         if args.do_train:
             train_dataloader, val_dataloader, vocab_size = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
         if args.do_test:
@@ -46,7 +46,7 @@ def main(args):
         # 2. 모델 불러오고
         model = build_model(args.model_type, vocab_size=vocab_size)
 
-    if args.model == 'electra':
+    if args.model_type == 'electra':
         if args.do_train:
             train_dataloader, val_dataloader = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
         if args.do_test:
