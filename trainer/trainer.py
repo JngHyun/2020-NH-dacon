@@ -15,7 +15,6 @@ def evaluate_validation(scores, criterion, labels):
     n_correct = (preds == labels).sum().item()
     return n_correct, criterion(scores, labels).item()
 
-
 def format_time(elapsed):
     elapsed_rounded = int(round((elapsed)))
     return str(datetime.timedelta(seconds=elapsed_rounded))

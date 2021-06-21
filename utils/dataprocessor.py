@@ -96,7 +96,7 @@ def build_loader(data_dir, command, model_type, batch_size):
             sentences = data['content']
             labels = data['info'].values
 
-            input_ids = token_to_ids(sentences,max_seq_len=int(config["max_seq_len"]))
+            input_ids = token_to_ids(sentences,max_seq_len=500)
             attention_masks=[]
 
             for seq in input_ids:
@@ -110,12 +110,12 @@ def build_loader(data_dir, command, model_type, batch_size):
             train_data = convert_to_tensordata(train_inputs, train_labels, train_masks)
             train_dataloader = DataLoader(train_data,
                                          sampler=RandomSampler(train_data),
-                                         batch_size=int(config["batch_size"]))
+                                         batch_size=int(batch_size))
 
             validation_data = convert_to_tensordata(validation_inputs, validation_labels, validation_masks)
             valid_dataloader = DataLoader(validation_data,
                                             sampler=SequentialSampler(validation_data),
-                                            batch_size=int(config["batch_size"]))
+                                            batch_size=int(batch_size))
             return train_dataloader, valid_dataloader
         
         else:
