@@ -74,7 +74,7 @@ if __name__ =='__main__':
     parser.add_argument('--search-hparam', action="store_true")
     args = parser.parse_args()
 
-    if args.do_train & args.do_test == False:
+    if args.do_train == False & args.do_test == False:
         print('Nothing to do !')
         raise NotImplementedError
 

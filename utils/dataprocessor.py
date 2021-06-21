@@ -2,7 +2,11 @@ import csv
 import random
 import pandas as pd
 import torch
-from torchtext.data import BucketIterator, Dataset, Example, Field, LabelField
+from torchtext.legacy.data import BucketIterator, Dataset, Example, Field, LabelField
+from torch.utils.data import TensorDataset, DataLoader,RandomSampler, SequentialSampler
+from keras.preprocessing.sequence import pad_sequences
+from sklearn.model_selection import train_test_split
+from transformers import ElectraTokenizer
 
 
 def read_data(data_dir, command, model_type):
@@ -50,6 +54,24 @@ def load_torchtext(input_file, command):
 
 
 # torch text 아닌 경우에 대한 케이스 작성 필요
+def token_to_ids(sentences, max_seq_len):
+  tokenizer = ElectraTokenizer.from_pretrained("monologg/koelectra-small-v3-discriminator")
+  sentences = ["[CLS]"+str(sentence)+"[SEP]" for sentence in sentences]
+  tokenized_texts = [tokenizer.tokenize(sent) for sent in sentences]
+
+  input_ids = [tokenizer.convert_tokens_to_ids(x) for x in tokenized_texts]
+  MAX_LEN = max_seq_len
+  input_ids = pad_sequences(input_ids,maxlen=MAX_LEN, dtype="long",truncating = "post",padding = "post")
+  return input_ids
+
+def convert_to_tensordata(inputs, labels, masks):
+  t_inputs = torch.tensor(inputs)
+  t_labels = torch.tensor(labels)
+  t_masks = torch.tensor(masks)
+
+  return TensorDataset(t_inputs, t_masks, t_labels)
+
+
 def build_loader(data_dir, command, model_type, batch_size):
     data = read_data(data_dir, command, model_type)
 
@@ -69,6 +91,33 @@ def build_loader(data_dir, command, model_type, batch_size):
             )
 
             return train_dataloader, valid_dataloader, vocab_size
+
+        if model_type == "electra":
+            sentences = data['content']
+            labels = data['info'].values
+
+            input_ids = token_to_ids(sentences,max_seq_len=int(config["max_seq_len"]))
+            attention_masks=[]
+
+            for seq in input_ids:
+                seq_mask = [float(i>0) for i in seq]
+                attention_masks.append(seq_mask)
+
+            train_inputs, validation_inputs,train_labels,validation_labels = train_test_split(input_ids,labels,random_state=2020,test_size=0.1)
+            train_masks, validation_masks,_,_=train_test_split(attention_masks,input_ids,random_state=2020,test_size=0.1)
+
+
+            train_data = convert_to_tensordata(train_inputs, train_labels, train_masks)
+            train_dataloader = DataLoader(train_data,
+                                         sampler=RandomSampler(train_data),
+                                         batch_size=int(config["batch_size"]))
+
+            validation_data = convert_to_tensordata(validation_inputs, validation_labels, validation_masks)
+            valid_dataloader = DataLoader(validation_data,
+                                            sampler=SequentialSampler(validation_data),
+                                            batch_size=int(config["batch_size"]))
+            return train_dataloader, valid_dataloader
+        
         else:
             raise NotImplementedError
 
