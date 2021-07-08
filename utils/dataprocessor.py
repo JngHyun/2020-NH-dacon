@@ -1,5 +1,6 @@
 import csv
 import random
+
 import pandas as pd
 import torch
 #from torchtext.legacy.data import BucketIterator, Dataset, Example, Field, LabelField
@@ -39,18 +40,21 @@ def load_torchtext(input_file, command):
             examples.append(Example.fromlist([field1, field2], datafields))
 
     data = Dataset(examples, datafields)
-    
+
     if command == "train":
         train_data, valid_data = data.split(
             split_ratio=0.9, random_state=random.seed(42)
         )
-        train_data.fields['text'].build_vocab(train_data) # max_size
-        train_data.fields['label'].build_vocab(train_data)
-        vocab_size = len(train_data.fields['text'].vocab)
-        
-        return (train_data, valid_data, vocab_size)
+        train_data.fields["text"].build_vocab(train_data)  # max_size
+        train_data.fields["label"].build_vocab(train_data)
+        vocab_size = len(train_data.fields["text"].vocab)
 
-    return data
+        return (train_data, valid_data, vocab_size)
+    else:
+        data.fields["text"].build_vocab(data)  # max_size
+        data.fields["id"].build_vocab(data)
+        vocab_size = len(data.fields["text"].vocab)
+        return data, vocab_size
 
 
 # torch text 아닌 경우에 대한 케이스 작성 필요
