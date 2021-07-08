@@ -18,7 +18,7 @@ class CBoWTextClassifier(nn.Module):
         self.embedding = nn.Embedding(vocab_size, emb_dim)
         self.hidden_layer = nn.Linear(emb_dim, hidden_size)
         self.output = nn.Linear(hidden_size, num_label)
-        self.dropout= nn.Dropout(dropout_ratio)
+        self.dropout = nn.Dropout(dropout_ratio)
 
     def forward(self, docs):
         embedded = self.embedding(docs)
