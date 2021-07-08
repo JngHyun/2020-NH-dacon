@@ -99,6 +99,7 @@ def build_loader(data_dir, command, model_type, batch_size):
         if model_type == "electra":
             sentences = data['content']
             labels = data['info'].values
+            vocab_size = ''
 
             input_ids = token_to_ids(sentences,max_seq_len=500)
             attention_masks=[]
@@ -120,7 +121,7 @@ def build_loader(data_dir, command, model_type, batch_size):
             valid_dataloader = DataLoader(validation_data,
                                             sampler=SequentialSampler(validation_data),
                                             batch_size=int(batch_size))
-            return train_dataloader, valid_dataloader
+            return train_dataloader, valid_dataloader, vocab_size
         
         else:
             raise NotImplementedError

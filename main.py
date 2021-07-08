@@ -55,7 +55,7 @@ def main(args):
 
     if args.model_type == 'electra':
         if args.do_train:
-            train_dataloader, val_dataloader = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
+            train_dataloader, val_dataloader, vocab_size = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
         if args.do_test:
             test_dataloader = build_loader(args.data_dir, "test", args.model_type, param_dict['test_batch_size'])
         model = pretrained_model(args.model_type)
@@ -71,7 +71,7 @@ def main(args):
 
     #     model = fasttext.train_supervised(input='./train.txt')
     # 3. trainer에서 학습하고 (model, dataloader) 넣어주기
-    run(train_dataloader, val_dataloader, test_dataloader, model, args.checkpoint, args.output_dir, param_dict['num_epochs'], param_dict['learning_rate'])
+    run(train_dataloader, val_dataloader, test_dataloader, model, args.model_type,args.checkpoint, args.output_dir, param_dict['num_epochs'], param_dict['learning_rate'])
     # 4. test, inference (model, dataloader) 
 
 if __name__ =='__main__':
