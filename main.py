@@ -33,17 +33,32 @@ def main(args):
     train_dataloader, val_dataloader, test_dataloader = None, None, None
     #  1. read data 
     # input : source data / output : dataloader
+
     if args.do_train:
         train_dataloader, val_dataloader, vocab_size = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
     if args.do_test:
         test_dataloader, vocab_size = build_loader(args.data_dir, "test", args.model_type, param_dict['test_batch_size'])
 
-    #   모델 input 형태로 변형
-        # 1. tokenize
-        # 2. vocab 생성
-        # 3. dataloader 생성
-    # 2. 모델 불러오고
-    model = build_model(args.model_type, vocab_size=vocab_size)
+    if args.model_type == 'cbow':
+        if args.do_train:
+            train_dataloader, val_dataloader, vocab_size = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
+        if args.do_test:
+            test_dataloader = build_loader(args.data_dir, "test", args.model_type, param_dict['test_batch_size'])
+
+
+        #   모델 input 형태로 변형
+            # 1. tokenize
+            # 2. vocab 생성
+            # 3. dataloader 생성
+        # 2. 모델 불러오고
+        model = build_model(args.model_type, vocab_size=vocab_size)
+
+    if args.model_type == 'electra':
+        if args.do_train:
+            train_dataloader, val_dataloader = build_loader(args.data_dir, "train", args.model_type, param_dict['train_batch_size'])
+        if args.do_test:
+            test_dataloader = build_loader(args.data_dir, "test", args.model_type, param_dict['test_batch_size'])
+        model = pretrained_model(args.model_type)
 
     print('success!')
     # checkpoint load
@@ -74,7 +89,10 @@ if __name__ =='__main__':
     parser.add_argument('--search-hparam', action="store_true")
     args = parser.parse_args()
 
+
     if args.do_train or args.do_test == False:
+
+    if args.do_train == False & args.do_test == False:
         print('Nothing to do !')
         raise NotImplementedError
 
