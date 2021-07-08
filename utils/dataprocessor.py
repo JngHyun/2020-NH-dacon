@@ -2,7 +2,7 @@ import csv
 import random
 import pandas as pd
 import torch
-from torchtext.legacy.data import BucketIterator, Dataset, Example, Field, LabelField
+#from torchtext.legacy.data import BucketIterator, Dataset, Example, Field, LabelField
 from torch.utils.data import TensorDataset, DataLoader,RandomSampler, SequentialSampler
 from keras.preprocessing.sequence import pad_sequences
 from sklearn.model_selection import train_test_split
