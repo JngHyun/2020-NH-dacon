@@ -90,8 +90,6 @@ if __name__ =='__main__':
     args = parser.parse_args()
 
 
-    if args.do_train or args.do_test == False:
-
     if args.do_train == False & args.do_test == False:
         print('Nothing to do !')
         raise NotImplementedError

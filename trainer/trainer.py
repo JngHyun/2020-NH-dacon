@@ -31,7 +31,7 @@ def flat_accuracy(preds, labels):
     labels_flat = labels.flatten()
     return np.sum(pred_flat == labels_flat) / len(labels_flat)
 
-def run(train_dataloader, val_dataloader, test_dataloader, model, checkpoint, output_dir, epochs, learning_rate):
+def run(train_dataloader, val_dataloader, test_dataloader, model, model_type, checkpoint, output_dir, epochs, learning_rate):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
     criterion = nn.CrossEntropyLoss()
 
@@ -44,8 +44,8 @@ def run(train_dataloader, val_dataloader, test_dataloader, model, checkpoint, ou
             print(f'Epoch: {epoch+1:02}')
             start_time = time.time()
 
-            train_loss, train_acc = train(model, train_dataloader, optimizer, criterion)
-            valid_loss, valid_acc = evaluate(model, val_dataloader, criterion)
+            train_loss, train_acc = train(model,model_type, train_dataloader, optimizer, criterion)
+            valid_loss, valid_acc = evaluate(model,model_type, val_dataloader, criterion)
 
             end_time = time.time()
             epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -65,7 +65,14 @@ def run(train_dataloader, val_dataloader, test_dataloader, model, checkpoint, ou
         output = pd.DataFrame(result_dict)
         output.to_csv(os.path.join(output_dir, 'submission.csv', index=False, header=True))
     
-def train(model, dataloader, optimizer, criterion):
+def train(model, model_type, dataloader, optimizer, criterion):
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print('the are %d GPU(s) abailable.'%torch.cuda.device_count())
+        print('We will use the GPU:',torch.cuda.get_device_name(0))
+    
+    #scheduler = get_linear_schedule_with_warmup(optimizer,num_warmup_steps=0,num_training_steps=total_steps)
+
     total_epoch_loss = 0
     total_epoch_acc = 0
     
@@ -75,22 +82,49 @@ def train(model, dataloader, optimizer, criterion):
     #               Training
     # ========================================
     for batch in tqdm(dataloader, desc="train"):
-        optimizer.zero_grad() 
-        text, labels = batch.text, batch.label
-        # Compute the output scores.
-        preds = model(text)
+        if model_type=='cbow':
+            optimizer.zero_grad() 
+            text, labels = batch.text, batch.label
+            # Compute the output scores.
+            preds = model(text)
 
-        # Then the loss function.
-        loss = criterion(preds, labels)
-        # Compute the gradient with respect to the loss, and update the parameters of the model.
-        optimizer.zero_grad()    
-        loss.backward()
-        optimizer.step()
+            # Then the loss function.
+            loss = criterion(preds, labels)
+            # Compute the gradient with respect to the loss, and update the parameters of the model.
+            optimizer.zero_grad()    
+            loss.backward()
+            optimizer.step()
 
-        acc = flat_accuracy(preds.detach().numpy(), labels)
+            acc = flat_accuracy(preds.detach().numpy(), labels)
 
-        total_epoch_loss += loss.item()
-        total_epoch_acc += acc.item()
+            total_epoch_loss += loss.item()
+            total_epoch_acc += acc.item()
+        
+        if model_type == 'electra':
+            batch = tuple(t.to(device) for t in batch)
+
+            b_input_ids, b_input_mask, b_labels = batch
+
+            outputs = model(b_input_ids, 
+                            token_type_ids=None, 
+                            attention_mask=b_input_mask, 
+                            labels=b_labels)
+
+            loss = outputs[0]
+            logits = logits.detach().cpu().numpy()
+            label_ids = b_labels.to('cpu').numpy()
+            acc = flat_accuracy(logits, label_ids)
+
+            total_epoch_loss += loss.item()
+            total_epoch_acc += acc.item()
+
+            loss.backward()
+
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+
+            optimizer.step()
+            #scheduler.step()
+            model.zero_grad()
 
     epoch_loss = total_epoch_loss / len(dataloader)
     epoch_acc = total_epoch_acc / len(dataloader)
@@ -98,7 +132,12 @@ def train(model, dataloader, optimizer, criterion):
     return epoch_loss, epoch_acc
     
 
-def evaluate(model, dataloader, criterion):
+def evaluate(model, model_type, dataloader, criterion):
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+        print('the are %d GPU(s) abailable.'%torch.cuda.device_count())
+        print('We will use the GPU:',torch.cuda.get_device_name(0))
+    
     total_epoch_loss = 0
     total_epoch_acc = 0
     
@@ -109,17 +148,35 @@ def evaluate(model, dataloader, criterion):
     # ========================================
     with torch.no_grad():
         for batch in tqdm(dataloader, desc="evaluate"):
-            text, labels = batch.text, batch.label
-            # Compute the output scores.
-            preds = model(text)
-            
-            # Then the loss function.
-            loss = criterion(preds, batch.label)
-            # Compute the gradient with respect to the loss, and update the parameters of the model.
-            acc = flat_accuracy(preds.detach().numpy(), labels)
+            if model_type =='cbow':
+                text, labels = batch.text, batch.label
+                # Compute the output scores.
+                preds = model(text)
+                
+                # Then the loss function.
+                loss = criterion(preds, batch.label)
+                # Compute the gradient with respect to the loss, and update the parameters of the model.
+                acc = flat_accuracy(preds.detach().numpy(), labels)
 
-            total_epoch_loss += loss.item()
-            total_epoch_acc += acc.item()
+                total_epoch_loss += loss.item()
+                total_epoch_acc += acc.item()
+            if model_type =='electra':
+                batch = tuple(t.to(device) for t in batch)
+
+                b_input_ids, b_input_mask, b_labels = batch
+   
+                outputs = model(b_input_ids, 
+                                token_type_ids=None, 
+                                attention_mask=b_input_mask)
+
+                logits = outputs[0]
+                logits = logits.detach().cpu().numpy()
+                label_ids = b_labels.to('cpu').numpy()
+
+                acc = flat_accuracy(logits, label_ids)
+
+                total_epoch_loss += loss.item()
+                total_epoch_acc += acc.item()
 
     epoch_loss = total_epoch_loss / len(dataloader)
     epoch_acc = total_epoch_acc / len(dataloader)
