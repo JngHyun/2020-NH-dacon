@@ -77,8 +77,8 @@ def main(args):
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()
     # Directory paths
-    parser.add_argument('--data-dir', required=True, default='./data')
-    parser.add_argument('--output-dir', required=True, default='./output')
+    parser.add_argument('--data-dir', default='./data')
+    parser.add_argument('--output-dir', default='./output')
     # Model 
     parser.add_argument('--model-type', required=True, choices=['cbow','fasttext','mbert','electra'])
     parser.add_argument('--checkpoint', type=str)
